@@ -1,0 +1,345 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Editor</title>
+    <style>
+        body {
+            padding: 10px;
+            font-family: "HelveticaNeue";
+        }
+        .main-container{
+            display: flex;
+                }
+        canvas {
+            border: 1px solid #bdc3c7;
+            margin-top: 10px;
+        }
+        .main-container{
+            width:100%;
+        }
+        .group{
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .group-font{
+            margin-bottom: 10px;
+        }
+     
+        #text-controls{
+            width:40%;
+        }
+        .group-canvas{
+           width:60%;
+        }
+        input{
+            margin-top: 5px;
+        }
+        #add-textbox{
+            margin-bottom: 10px;
+            background-color: #02b201;
+            outline: none;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+        }
+        #delete-selected{
+            background-color: #fe6464;
+            outline: none;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+        }
+        #download-png{
+            margin-top: 10px; 
+            background-color: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 10px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>Canvas Text and Background Editor</h1>
+<div class="main-container">
+    <div id="text-controls">
+        <div class="group-font">
+            <label for="font-family">Font family</label>
+            <select id="font-family">
+                <option value="sans-serif" selected>Sans serif</option>
+                <option value="serif">Serif</option>
+                <option value="monospace">Monospace</option>
+            </select>
+        </div>
+        <div class="group-font">
+            <label for="text-color">Text color</label>
+            <input type="color" id="text-color" value="#000000">
+        </div>
+        <div class="group-font">
+            <label for="text-font-size">Font Size</label>
+            <input type="range" min="12" max="120" step="1" value="45" id="text-font-size">
+        </div>
+        <button id="add-textbox">Add Text Box</button>
+        <div class="group-font">
+            <label for='text-align'>Text align</label>
+            <select id="text-align">
+                <option value="left" selected>Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+            </select>
+            </div>
+        <div class="group-font">
+            <input type='checkbox' name='fonttype' id="text-cmd-bold"> <b>B</b>
+            <input type='checkbox' name='fonttype' id="text-cmd-italic"> <i>I</i>
+            <input type='checkbox' name='fonttype' id="text-cmd-underline"> Underline
+            <input type='checkbox' name='fonttype' id="text-cmd-linethrough"> Linethrough
+            <input type='checkbox' name='fonttype' id="text-cmd-overline"> Overline
+        </div>
+       
+        <div class="group">
+            <label for="image-upload">Upload Background Image</label>
+            <input type="file" id="image-upload" accept="image/*">
+        </div>
+        <div class="group">
+            <label for="add-image">Add Image</label>
+            <input type="file" id="add-image" accept="image/*">
+        </div>
+        <div class="group">
+            <label for="add-anim-image">Add Image to animate left to right</label>
+            <input type="file" id="add-anim-image" accept="image/*">
+        </div>
+
+        <div>
+           
+        </div> 
+        
+        <div class="group-font">
+            <label for="add-anim-image">Delete Selected Item</label>
+            <button id="delete-selected">Delete</button> 
+     </div>
+     <button id="download-png">Download as PNG</button>
+    </div>
+
+   
+        <div class="group-canvas">
+            <canvas id="canvas" width="700" height="500"></canvas>
+        </div>
+      
+</div>
+   
+    
+
+
+    </body>
+    <script>
+        const canvas = new fabric.Canvas("canvas");
+
+        canvas.add(new fabric.Textbox("Write here", {
+            left: 50,
+            top: 50,
+            fontFamily: "sans-serif",
+            fill: "#000",
+            fontSize: 45,
+            fixedWidth: 300
+        }));
+
+        let textObject = canvas.item(0);
+        canvas.setActiveObject(textObject);
+        textObject.enterEditing();
+
+        document.getElementById("text-color").addEventListener("change", (event) => {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.isType("textbox")) {
+                activeObject.set("fill", event.target.value);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById("font-family").addEventListener("change", (event) => {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.isType("textbox")) {
+                activeObject.set("fontFamily", event.target.value);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById("text-font-size").addEventListener("change", (event) => {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.isType("textbox")) {
+                activeObject.set("fontSize", event.target.value);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById("add-textbox").addEventListener("click", () => {
+            const newText = new fabric.Textbox("New Text", {
+                left: 50,
+                top: 100 + (canvas._objects.length * 50),
+                fontFamily: "sans-serif",
+                fill: "#000",
+                fontSize: 45,
+                fixedWidth: 300
+            });
+            canvas.add(newText);
+            canvas.setActiveObject(newText);
+            newText.enterEditing();
+        });
+
+        document.getElementById("image-upload").addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                fabric.Image.fromURL(e.target.result, (img) => {
+                    img.scaleToWidth(canvas.width);
+                    img.scaleToHeight(canvas.height);
+                    canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                        originX: "left",
+                        originY: "top"
+                    });
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+        document.getElementById("add-image").addEventListener("change", (event) => {
+        const file = event.target.files[0]; 
+        const reader = new FileReader(); 
+
+        reader.onload = (e) => {
+          
+            const imgElement = new Image();
+            imgElement.src = e.target.result; 
+            
+            imgElement.onload = () => {
+              
+                const imgInstance = new fabric.Image(imgElement, {
+                    left: 100,
+                    top: 100,
+                    angle: 0,
+                    opacity: 1
+                });
+                canvas.add(imgInstance); 
+                imgInstance.scaleToWidth(200);
+            };
+        };
+        reader.readAsDataURL(file); 
+    });
+
+        document.getElementById("add-anim-image").addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const imgElement = new Image();
+                imgElement.src = e.target.result;
+
+                imgElement.onload = () => {
+                    const imgInstance = new fabric.Image(imgElement, {
+                        left: 100,
+                        top: 150,
+                        angle: 0,
+                        opacity: 1,
+                        scaleX: 0.1, 
+                        scaleY: 0.1 
+                    });
+                    canvas.add(imgInstance);
+                    imgInstance.scaleToWidth(200);
+
+                    
+                    function animateImage(image, startX, endX, duration) {
+                        image.animate('left', endX, {
+                            duration: duration,
+                            onChange: canvas.renderAll.bind(canvas),
+                            easing: fabric.util.ease.easeInOutQuad,
+                            onComplete: function() {
+                                
+                                animateImage(image, endX, startX, duration);
+                            }
+                        });
+                    }
+
+                   
+                    animateImage(imgInstance, 20, 450, 2000); 
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+        document.getElementById("delete-selected").addEventListener("click", () => {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                canvas.remove(activeObject);
+                canvas.renderAll();
+            }
+        });
+
+
+        document.getElementById("text-align").addEventListener("change", (event) => {
+	canvas.getActiveObject().set("textAlign", event.target.value);
+	canvas.renderAll();
+});
+
+var fontTypeProps = document.getElementsByName("fonttype");
+
+for (var i = 0, max = fontTypeProps.length; i < max; i += 1) {
+	fontTypeProps[i].onclick = function () {
+		var canvasActiveObj = canvas.getActiveObject();
+		if (document.getElementById(this.id).checked == true) {
+			if (this.id === "text-cmd-bold") {
+				canvasActiveObj.set("fontWeight", "bold");
+			}
+			if (this.id === "text-cmd-italic") {
+				canvasActiveObj.set("fontStyle", "italic");
+			}
+			if (this.id === "text-cmd-underline") {
+				canvasActiveObj.set("underline", true);
+			}
+			if (this.id === "text-cmd-linethrough") {
+				canvasActiveObj.set("linethrough", true);
+			}
+			if (this.id === "text-cmd-overline") {
+				canvasActiveObj.set("overline", true);
+			}
+		} else {
+			if (this.id === "text-cmd-bold") {
+				canvasActiveObj.set("fontWeight", "");
+			}
+			if (this.id === "text-cmd-italic") {
+				canvasActiveObj.set("fontStyle", "");
+			}
+			if (this.id === "text-cmd-underline") {
+				canvasActiveObj.set("underline", false);
+			}
+			if (this.id === "text-cmd-linethrough") {
+				canvasActiveObj.set("linethrough", false);
+			}
+			if (this.id === "text-cmd-overline") {
+				canvasActiveObj.set("overline", false);
+			}
+		}
+		canvas.renderAll();
+		console.info(canvasActiveObj);
+	};
+
+}
+        document.getElementById("download-png").addEventListener("click", () => {
+            const dataURL = canvas.toDataURL({
+                format: "png",
+                quality: 1
+            });
+            const link = document.createElement("a");
+            link.href = dataURL;
+            link.download = "canvas_image.png";
+            link.click();
+        });
+
+
+
+    </script>
+</body>
+</html>
